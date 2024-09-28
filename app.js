@@ -1,5 +1,5 @@
 /*Name:M>Ahmed
-Version 1
+Version 2
 Todo App
 
 Can Add edit remove and also count task 
@@ -9,42 +9,43 @@ const todoList = document.getElementById("todoList")
 const counter = document.getElementById("counter")
 const btnAddTodo = document.getElementById("btnAddTodo")
 const inputTodoTask = document.getElementById("inputTodoTask")
+const noTodo = document.getElementById("no-todo")
 let firstTime = true
+let arrayOfTodo;
 
 
 
-//for first time only it will remove after
+initTodoApp()
 
+function initTodoApp() {
 
-let arrayOfTodo = [];
-addTaskInTodoList("No TODO found ADD a todo to start")
-document.getElementById(arrayOfTodo[0].id).querySelector("#editOrRemove").querySelector(".edit").disabled = true
-document.getElementById(arrayOfTodo[0].id).querySelector("#editOrRemove").querySelector(".remove").disabled = true
+    const localTodos= localStorage.getItem("todos")
+    if (localTodos) {
+        arrayOfTodo = JSON.parse(localStorage.getItem("todos"))
+        arrayOfTodo.forEach(element => {
+            showTask(element)
+        }); 
 
-
-
-
-btnAddTodo.addEventListener("click", () => {
-    const taskTrimed = inputTodoTask.value.trim()
-    
-console.log("arrayOfTodo")
-console.log(arrayOfTodo)
-if (taskTrimed) {
-    if (firstTime) {
-        removeTodo(arrayOfTodo[0].id)
-    firstTime=false
-        }
-    addTaskInTodoList(taskTrimed)
-}
+    }else{
+arrayOfTodo=[]
+    }
+    if (arrayOfTodo.length==0) {
+        
+        noTodo.classList.remove("hide")
+        
+    }
    
-    console.log("arrayOfTodo")
-    console.log(arrayOfTodo)
-})
+    btnAddTodo.addEventListener("click", addTask)
+    todoList.addEventListener("click", handleTodoAction)
+
+
+
+}
 
 
 function toggleInEditMode(element) {
 
-    element.querySelector("input").disabled = !element.querySelector("input").disabled 
+    element.querySelector("input").disabled = !element.querySelector("input").disabled
     element.querySelector("#saveOrCancel").classList.toggle("hide")
     element.querySelector("#editOrRemove").classList.toggle("hide")
 
@@ -53,90 +54,70 @@ function toggleInEditMode(element) {
 }
 
 
-function cancelTask(id) {
+function cancelTask(element) {
+
+    let id = element.querySelector("p").innerText
+    let indexOfTask = -1
+
+    indexOfTask = arrayOfTodo.findIndex((subArrayOfTodo) => subArrayOfTodo.id == id)
     element.querySelector("input").value = arrayOfTodo[indexOfTask].todo
+
+    toggleInEditMode(element)
 }
 
-function updateTask(id,task="none") {
-    console.log("entering in updating")
-    
-    let arrayTaskIndex = 0 
-    for (let i = 0; i < arrayOfTodo.length; i++) {
-        if (arrayOfTodo[i].id ==id) {
-            arrayTaskIndex = i
-            break
-        }
-        
-    }
-    if (task=="none") {
-       
+function updateTask(id, task = "none") {
+
+    let arrayTaskIndex = 0
+    arrayTaskIndex = arrayOfTodo.findIndex((subArray)=> subArray.id == id)
+    if (task == "none") {
+
         document.getElementById(id).querySelector("input").value = arrayOfTodo[arrayTaskIndex].todo
-    }else{
-        document.getElementById(id).querySelector("input").value = task 
+    } else {
+        document.getElementById(id).querySelector("input").value = task
         arrayOfTodo[arrayTaskIndex].todo = task
 
     }
+}
 
-    console.log("Updated")
-    console.log(arrayOfTodo)
+
+
+function handleTodoAction(e) {
+    const action = e.target.className
+
+    switch (action) {
+        case "edit":toggleInEditMode(e.target.closest(".task"))
+         break;
+        case "remove": removeTodo(e.target.closest('.task').id)
+         break;
+        case "save":
+            updateTask(e.target.closest(".task").id, document.getElementById(e.target.closest(".task").id).querySelector(".input").value)
+            toggleInEditMode(e.target.closest(".task"))
+            break
+        case "cancel":
+            cancelTask(e.target.parentElement.parentElement)
+            break;
+        default:
+            break;
+    }
+
+
 
 
 
 }
 
-todoList.addEventListener("click", (e) => {
 
-    if (e.target.matches('.edit')) {
-        
-        toggleInEditMode(e.target.closest(".task"))
-
-    }
-
-    else if (e.target.matches('.remove')) {
-
-        let alertText = "Do YOu really want to remove"
-        if (confirm(alertText)) {
-        
-    removeTodo(e.target.closest('.task').id)
-    updateCounter()
-        }
-    if(counter == 0 ){
+function updateCounterAndStorage() {
     
-addTaskInTodoList("No TODO found")
-firstTime = true
-        
-    }
+    localStorage.setItem("todos",JSON.stringify(arrayOfTodo))
+    if (arrayOfTodo.length ==0) {
+            noTodo.classList.remove("hide")
 
-
-
-    }
-
-    else if (e.target.matches('.save')) {
-
+    } else {
     
-        toggleInEditMode(e.target.closest(".task"))
-        console.log(e.target.closest("input")) 
-        console.log(e.target.querySelector("input")) 
-
-        updateTask(e.target.closest(".task").id ,document.getElementById(e.target.closest(".task").id).querySelector(".input").value)
-
-
-    }
-    else if (e.target.matches('.cancel')) {
-        cancelTask(e.target.parentElement.parentElement)
-
-        toggleInEditMode(e.target.parentElement.parentElement)
-
-    }
-
-
-
-})
-
-
-
-function updateCounter() {
     counter.innerText = arrayOfTodo.length
+    noTodo.classList.add("hide")    
+}
 }
 
 
@@ -147,14 +128,20 @@ function idGenerater() {
 
 
 
-function addTaskInTodoList(todo) {
+function addTask() {
 
-    const todoObj = {
-        id: idGenerater(),  
-        todo: todo
-    };
-    arrayOfTodo.push(todoObj);
-   showTask(todoObj)
+
+    const taskTrimed = inputTodoTask.value.trim()
+    if (taskTrimed) {
+        const todoObj = {
+            id: idGenerater(),
+            todo: taskTrimed
+        };
+        arrayOfTodo.push(todoObj);
+        showTask(todoObj)
+    }
+
+
 
 }
 
@@ -162,10 +149,14 @@ function addTaskInTodoList(todo) {
 
 
 function removeTodo(id) {
-    arrayOfTodo = arrayOfTodo.filter(todo => todo.id != id);
-    document.getElementById(id).remove();
-    updateCounter();
 
+    let alertText = "Do You really want to remove"
+    if (confirm(alertText)) {
+
+        arrayOfTodo = arrayOfTodo.filter(todo => todo.id != id);
+        document.getElementById(id).remove();
+        updateCounterAndStorage();
+    }
 }
 
 
@@ -188,5 +179,5 @@ function showTask(todo) {
     `;
 
     todoList.appendChild(todoElementDiv);
-    updateCounter()
+    updateCounterAndStorage()
 }

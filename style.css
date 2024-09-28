@@ -61,6 +61,19 @@ justify-items: center;
 
 }
 
+
+.no-todo{
+    background: #39cf0b;
+    font-size: 20px;
+    font-weight: lighter;
+    text-align: center;
+    padding: 10px;
+    margin: 20px;
+    line-height: 30px;
+    border-radius: 10px;
+    color: aliceblue;
+}
+
 .task{
 
 
